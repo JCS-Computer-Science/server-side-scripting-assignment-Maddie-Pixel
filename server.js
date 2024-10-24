@@ -26,9 +26,9 @@ server.get('/newgame', (req, res)=>{
 
 server.get('/gamestate', (req, res)=>{
     let id = req.query;
-    console.log(activeSessions[id.sessionID])
+    let state = activeSessions[id.sessionID];
     res.status(200);
-    res.send(activeSessions[id.sessionID]);
+    res.send({gameState: state});
 })
 
 //Do not remove this line. This allows the test suite to start
