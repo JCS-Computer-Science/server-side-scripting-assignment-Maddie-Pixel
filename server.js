@@ -10,20 +10,33 @@ let activeSessions={}
 
 server.get('/newgame', (req, res)=>{
     let newID = uuid.v4();
-    let word = req.query;
-    word = word.answer;
-    let newGame = {
-        wordToGuess: word,
-        guesses:[],
-        wrongLetters: [],
-        closeLetters: [],
-        rightLetters: [],
-        remainingGuesses: 6,
-        gameOver: false
+    if(req.query.answer) {
+        let newGame = {
+            wordToGuess: req.query.answer,
+            guesses:[],
+            wrongLetters: [],
+            closeLetters: [],
+            rightLetters: [],
+            remainingGuesses: 6,
+            gameOver: false
+        }
+            activeSessions[newID] = newGame;
+            res.status(201);
+            res.send({sessionID: newID});
+    } else {
+        let newGame = {
+            wordToGuess: 'apple',
+            guesses:[],
+            wrongLetters: [],
+            closeLetters: [],
+            rightLetters: [],
+            remainingGuesses: 6,
+            gameOver: false
+        }
+        activeSessions[newID] = newGame;
+        res.status(201);
+        res.send({sessionID: newID});
     }
-    activeSessions[newID] = newGame;
-    res.status(201);
-    res.send({sessionID: newID});
 })
 
 server.get('/gamestate', (req, res)=>{
@@ -34,11 +47,23 @@ server.get('/gamestate', (req, res)=>{
 })
 
 server.post('/guess', (req, res)=>{
-    let state =activeSessions[req.body.sessionID];
-    console.log(state['guesses']);
-    state['guesses'].push(req.body);
+    let session =req.body.sessionID;
+    let guess = req.body.guess.split('');
+    let letter;
+
+    guess[0] = {
+        result: "CLOSE",
+        value: letter
+    }
+    for (let i = 0; i < 5; i++) {
+        letter = guess[0];
+    }
+
+    activeSessions[session]['guesses'].push(guess);
+    
 
     res.status(201);
+    res.send({gameState: activeSessions[session]});
 })
 //Do not remove this line. This allows the test suite to start
 //multiple instances of your server on different ports
