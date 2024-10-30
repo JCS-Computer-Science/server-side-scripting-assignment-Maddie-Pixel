@@ -42,12 +42,21 @@ server.get('/newgame', (req, res)=>{
 server.get('/gamestate', (req, res)=>{
     let id = req.query;
     let state = activeSessions[id.sessionID];
-    res.status(200);
-    res.send({gameState: state});
+    if (state){
+        res.status(200);
+        res.send({gameState: state});
+    } else if (id.sessionID){
+        res.status(404);
+        res.send({error: 'Session ID does not exist'});
+    } else {
+        res.status(400);
+        res.send({error: 'Session ID not found'})
+    }
 })
 
 server.post('/guess', (req, res)=>{
-    if (activeSessions[req.body.sessionID]) {
+    
+    if (activeSessions[req.body.sessionID] && req.body.guess.split('').length == 5) {
         let copy;
         let session =req.body.sessionID;
         let guess = req.body.guess.split('');
@@ -56,17 +65,25 @@ server.post('/guess', (req, res)=>{
     
         activeSessions[session].remainingGuesses -= 1;
         
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < guess.length; i++) {
+            copy = 0;
             letter = guess[i];
             if (letter == answer[i]){
+                for (let l = 0; l < activeSessions[session].rightLetters.length; l++) {
+                    if (activeSessions[session].rightLetters[l] == letter) {
+                        copy = 1;
+                    }
+                }
+                
                 guess[i] = {
                     result: "RIGHT",
                     value: letter
                 }
-                activeSessions[session].rightLetters.push(letter);
+                if (copy != 1){
+                    activeSessions[session].rightLetters.push(letter);
+                }
             } else {
                 for (let j = 0; j < 5; j++) {
-                    copy = 0;
                     if (letter == answer[j]){
                         for (let l = 0; l < activeSessions[session].closeLetters.length; l++) {
                             if (activeSessions[session].closeLetters[l] == letter) {
@@ -74,29 +91,47 @@ server.post('/guess', (req, res)=>{
                             }
                         }
                         
+                        guess[i] = {
+                            result: "CLOSE",
+                            value: letter
+                        }
                         if (copy != 1){
-                            guess[i] = {
-                                result: "CLOSE",
-                                value: letter
-                            }
                             activeSessions[session].closeLetters.push(letter);
                         }
                     }
                 }
             }
             if (letter == guess[i]) {
+                for (let l = 0; l < activeSessions[session].wrongLetters.length; l++) {
+                    if (activeSessions[session].wrongLetters[l] == letter) {
+                        copy = 1;
+                    }
+                }
+                
                 guess[i] = {
                     result: "WRONG",
                     value: letter
                 }
-                activeSessions[session].wrongLetters.push(letter);
+                if (copy != 1){
+                    activeSessions[session].wrongLetters.push(letter);
+                }
             }
+        }
+        for (let i = 0; i < 5; i++) {
+           for (let j = 0; j < 5; j++) {
+            if (activeSessions[session].closeLetters[i] == activeSessions[session].rightLetters[j]){
+                activeSessions[session].closeLetters.splice(i, 1);
+            }
+           }
         }
         
         activeSessions[session]['guesses'].push(guess);
         
         res.status(201);
         res.send({gameState: activeSessions[session]});
+    } else if(req.body.guess.split('').length != 5){
+        res.status(400);
+        res.send({error: 'Invalid guess'})
     } else if (req.body.sessionID){
         res.status(404);
         res.send({error: 'Session ID does not exist'});
