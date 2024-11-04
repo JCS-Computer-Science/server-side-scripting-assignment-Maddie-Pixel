@@ -55,18 +55,18 @@ server.get('/gamestate', (req, res)=>{
 })
 
 server.post('/guess', (req, res)=>{
+    let guess = req.body.guess.split('');
+    let session =req.body.sessionID;
     let correct = true;
     let alpha = true;
-    let session =req.body.sessionID;
-    let guess = req.body.guess.split('');
     let answer = activeSessions[session].wordToGuess.split('');
     for (let i = 0; i < guess.length; i++) {
         if(answer[i] != 'a' && answer[i] != 'b' && answer[i] != 'c' && answer[i] != 'd' && answer[i] != 'e' && answer[i] != 'f' && answer[i] != 'g' && answer[i] != 'h'  && answer[i] != 'i' && answer[i] != 'j' && answer[i] != 'k' && answer[i] != 'l' && answer[i] != 'm' && answer[i] != 'n' && answer[i] != 'o' && answer[i] != 'p' && answer[i] != 'q' && answer[i] != 'r' && answer[i] != 's' && answer[i] != 't' && answer[i] != 'u' && answer[i] != 'v' && answer[i] != 'w' && answer[i] != 'x' && answer[i] != 'y' && answer[i] != 'z'){
             alpha = false;
         }
     }
-    
-    if (activeSessions[session] && guess.length == 5 && alpha == true) {
+
+    if (activeSessions[req.body.sessionID] && req.body.guess.split('').length == 5 && alpha == true) {
         let copy;
         let letter;
     
@@ -138,13 +138,13 @@ server.post('/guess', (req, res)=>{
                 correct = false;
             }
         }
-        if (correct == true){
+        if (correct == true || activeSessions[session].remainingGuesses == 0){
             activeSessions[session].gameOver = true;
         }
         
         res.status(201);
         res.send({gameState: activeSessions[session]});
-    } else if(guess.length != 5 || alpha == false){
+    } else if(req.body.guess.split('').length != 5 || alpha == false){
         res.status(400);
         res.send({error: 'Invalid guess'})
     } else if (req.body.sessionID){
