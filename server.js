@@ -11,8 +11,9 @@ let activeSessions={}
 server.get('/newgame', (req, res)=>{
     let newID = uuid.v4();
     if(req.query.answer) {
+        activeSessions[newID + 'answer'] = req.query.answer;
         let newGame = {
-            wordToGuess: req.query.answer,
+            wordToGuess: undefined,
             guesses:[],
             wrongLetters: [],
             closeLetters: [],
@@ -24,8 +25,9 @@ server.get('/newgame', (req, res)=>{
             res.status(201);
             res.send({sessionID: newID});
     } else {
+        activeSessions[newID + 'answer'] = 'apple';
         let newGame = {
-            wordToGuess: 'apple',
+            wordToGuess: undefined,
             guesses:[],
             wrongLetters: [],
             closeLetters: [],
@@ -41,10 +43,10 @@ server.get('/newgame', (req, res)=>{
 
 server.get('/gamestate', (req, res)=>{
     let id = req.query;
-    let state = activeSessions[id.sessionID];
-    if (state){
+    let session = activeSessions[id.sessionID];
+    if (session){
         res.status(200);
-        res.send({gameState: state});
+        res.send({gameState: session});
     } else if (id.sessionID){
         res.status(404);
         res.send({error: 'Session ID does not exist'});
@@ -61,7 +63,7 @@ server.post('/guess', (req, res)=>{
     let alpha = true;
     let answer;
     if (activeSessions[session]){
-        answer = activeSessions[session].wordToGuess.split('');
+        answer = activeSessions[session + 'answer'].split('');
         for (let i = 0; i < guessed.length; i++) {
             if(answer[i] != 'a' && answer[i] != 'b' && answer[i] != 'c' && answer[i] != 'd' && answer[i] != 'e' && answer[i] != 'f' && answer[i] != 'g' && answer[i] != 'h'  && answer[i] != 'i' && answer[i] != 'j' && answer[i] != 'k' && answer[i] != 'l' && answer[i] != 'm' && answer[i] != 'n' && answer[i] != 'o' && answer[i] != 'p' && answer[i] != 'q' && answer[i] != 'r' && answer[i] != 's' && answer[i] != 't' && answer[i] != 'u' && answer[i] != 'v' && answer[i] != 'w' && answer[i] != 'x' && answer[i] != 'y' && answer[i] != 'z'){
                 alpha = false;
@@ -144,6 +146,9 @@ server.post('/guess', (req, res)=>{
         if (correct == true || activeSessions[session].remainingGuesses == 0){
             activeSessions[session].gameOver = true;
         }
+        if(activeSessions[session].gameOver == true){
+            activeSessions[session].wordToGuess = activeSessions[session + 'answer'];
+        }
         
         res.status(201);
         res.send({gameState: activeSessions[session]});
@@ -187,6 +192,7 @@ server.delete('/reset', (req, res)=>{
 server.delete('/delete', (req, res)=>{
     let session =req.query.sessionID;
     if(activeSessions[session]){
+        delete activeSessions[session + 'answer']
         delete activeSessions[session];
         res.send(204);
     } else if (session){
@@ -198,44 +204,8 @@ server.delete('/delete', (req, res)=>{
     }
 })
 
-server.delete('/reset', (req, res)=>{
-    let session =req.query.sessionID;
-    if(activeSessions[session]){
-        let newGame = {
-            wordToGuess: undefined,
-            guesses:[],
-            wrongLetters: [],
-            closeLetters: [],
-            rightLetters: [],
-            remainingGuesses: 6,
-            gameOver: false
-        }
-        activeSessions[session] = newGame;
-        console.log(newGame);
-        res.status(200);
-        res.send({gameState: newGame});
-    } else if (session){
-        res.status(404);
-        res.send({error: 'Session ID does not exist'});
-    } else {
-        res.status(400);
-        res.send({error: 'Session ID not found'})
-    }
-})
 
-server.delete('/delete', (req, res)=>{
-    let session =req.query.sessionID;
-    if(activeSessions[session]){
-        delete activeSessions[session];
-        res.send(204);
-    } else if (session){
-        res.status(404);
-        res.send({error: 'Session ID does not exist'});
-    } else {
-        res.status(400);
-        res.send({error: 'Session ID not found'})
-    }
-})
+
 //Do not remove this line. This allows the test suite to start
 //multiple instances of your server on different ports
 module.exports = server;
