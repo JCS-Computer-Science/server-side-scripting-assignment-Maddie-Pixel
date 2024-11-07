@@ -1,4 +1,5 @@
 const express = require("express");
+const { pipeline } = require("supertest/lib/test");
 const uuid = require("uuid")
 const server = express();
 server.use(express.json())
@@ -7,8 +8,13 @@ server.use(express.static('public'))
 
 //All your code goes here
 let activeSessions={}
+async function getWord() {
+    let response= await fetch ("https://random-word-api.herokuapp.com/word?length=5");
+    return await response.json();
+}
 
 server.get('/newgame', (req, res)=>{
+    console.log(getWord());
     let newID = uuid.v4();
     if(req.query.answer) {
         activeSessions[newID + 'answer'] = req.query.answer;
